@@ -80,7 +80,7 @@ find_active_peer() {
 }
 
 # ── 5. Start Consul ───────────────────────────────────────────────────────────
-start_consul() {
+start_consul_old() {
     local my_ip="$1"
     local mode="$2"      # "leader" | "follower"
     local peer="${3:-}"  # required nếu follower
@@ -91,7 +91,16 @@ start_consul() {
         log "★  Starting as LEADER (bootstrap)"
         # -bootstrap: self-elect ngay, không cần peer vote
         # Pitfall: KHÔNG dùng -bootstrap-expect cùng lúc với -bootstrap
-        flags+=("-bootstrap")
+        # Thay vì:
+        # flags+=("-bootstrap")
+
+        # Dùng:
+        flags+=(
+            "-bootstrap-expect=3"
+            "-retry-join=$(get_peers | head -1 || echo '127.0.0.1')"
+            "-retry-interval=10s"
+            "-retry-max=30"
+        )
     else
         log "→  Starting as FOLLOWER, joining: $peer"
         # retry-join tự động thử lại nếu peer chưa sẵn sàng
@@ -143,7 +152,29 @@ start_consul() {
     tail -20 /var/log/consul.log >&2
     exit 1
 }
+start_consul() {
+    local my_ip="$1"
+    local peers="$2"   # space-separated list
 
+    local retry_flags=()
+    for p in $peers; do
+        retry_flags+=("-retry-join=$p")
+    done
+    # Nếu không có peer, self-join (sẽ chờ bootstrap-expect)
+    [ ${#retry_flags[@]} -eq 0 ] && retry_flags+=("-retry-join=$my_ip")
+
+    consul agent \
+        -server \
+        -bootstrap-expect=3 \
+        -bind="$my_ip" \
+        -advertise="$my_ip" \
+        -client="0.0.0.0" \
+        -data-dir="/var/lib/consul" \
+        -config-dir="/etc/consul.d" \
+        -log-level="WARN" \
+        "${retry_flags[@]}" \
+        >> /var/log/consul.log 2>&1 &
+}
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 main() {
     log "══════════════════════════════════════════"

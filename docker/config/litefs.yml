@@ -1,9 +1,8 @@
 # LiteFS v0.5.x config
-# LITEFS_ADVERTISE_URL được set bởi entrypoint.sh = Tailscale IP của node này
 
 fuse:
   dir: "/mnt/litefs"
-  allow-other: true        # Cho phép process khác (ngoài root) đọc mount
+  allow-other: true
 
 data:
   dir: "/data/litefs"
@@ -13,19 +12,12 @@ data:
 
 lease:
   type: "consul"
-  # Replicas dùng URL này để connect đến primary lấy WAL
   advertise-url: "http://${LITEFS_ADVERTISE_URL}:20202"
   consul:
-    url:        "http://localhost:8500"
-    key:        "litefs/primary"
-    ttl:        "10s"
+    url: "http://localhost:8500"
+    key: "litefs/primary"
+    ttl: "10s"
     lock-delay: "5s"
 
-log:
-  level:  "info"
-  format: "text"
-
-# Command chạy sau khi FUSE mount xong
-# LiteFS giữ sống cho đến khi command này exit
 exec:
   - cmd: "/usr/local/bin/run-app.sh"

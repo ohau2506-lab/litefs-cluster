@@ -93,4 +93,7 @@ log "LiteFS will advertise at: http://$MY_IP:20202"
 log "Starting LiteFS (this will block until run-app.sh exits)..."
 log "═══════════════════════════════════════════"
 
-exec litefs mount -config /etc/litefs.yml
+# exec litefs mount -config /etc/litefs.yml
+# Thay dòng exec litefs mount bằng:
+envsubst < /etc/litefs.yml > /tmp/litefs-rendered.yml
+exec litefs mount -config /tmp/litefs-rendered.yml

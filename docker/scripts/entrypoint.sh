@@ -94,6 +94,7 @@ log "Starting LiteFS (this will block until run-app.sh exits)..."
 log "═══════════════════════════════════════════"
 
 # exec litefs mount -config /etc/litefs.yml
-# Thay dòng exec litefs mount bằng:
-envsubst < /etc/litefs.yml > /tmp/litefs-rendered.yml
+# Bằng:
+sed "s|\${LITEFS_ADVERTISE_URL}|${LITEFS_ADVERTISE_URL}|g" \
+    /etc/litefs.yml > /tmp/litefs-rendered.yml
 exec litefs mount -config /tmp/litefs-rendered.yml
